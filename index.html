@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>اختبار تشخيصي – برمجة متقدمة Java</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --surface: #181b24;
+    --card: #1e2130;
+    --border: #2a2f45;
+    --accent: #6c63ff;
+    --accent-soft: rgba(108,99,255,0.12);
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --text: #e8eaf0;
+    --muted: #8b91a8;
+    --code-bg: #12141c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 16px 60px;
+  }
+
+  .container { max-width: 720px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 36px 24px 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent), #a78bfa, #6c63ff);
+  }
+  .tag {
+    display: inline-block;
+    background: var(--accent-soft);
+    color: #a78bfa;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(108,99,255,0.25);
+    margin-bottom: 14px;
+  }
+  .header h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .header p { font-size: 13.5px; color: var(--muted); line-height: 1.7; }
+
+  .meta {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 18px;
+    flex-wrap: wrap;
+  }
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    color: var(--muted);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 12px;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .dot-purple { background: var(--accent); }
+  .dot-yellow { background: var(--yellow); }
+  .dot-green { background: var(--green); }
+
+  /* Timer */
+  .timer-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .timer-label { font-size: 13px; color: var(--muted); }
+  #timer-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--accent);
+    transition: color 0.3s;
+  }
+  #timer-display.warning { color: var(--yellow); }
+  #timer-display.danger { color: var(--red); }
+  .timer-progress {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 10px;
+    overflow: hidden;
+  }
+  #progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #a78bfa);
+    border-radius: 2px;
+    transition: width 1s linear, background 0.3s;
+    width: 100%;
+  }
+
+  /* Questions */
+  .question-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 18px;
+    transition: border-color 0.2s;
+  }
+  .question-card:hover { border-color: rgba(108,99,255,0.35); }
+
+  .q-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .q-num {
+    min-width: 30px; height: 30px;
+    background: var(--accent-soft);
+    border: 1px solid rgba(108,99,255,0.3);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #a78bfa;
+    flex-shrink: 0;
+  }
+  .q-text { font-size: 14.5px; line-height: 1.7; font-weight: 500; padding-top: 3px; }
+
+  .q-type-badge {
+    display: inline-block;
+    font-size: 10.5px;
+    padding: 2px 8px;
+    border-radius: 5px;
+    margin-bottom: 12px;
+    margin-right: 44px;
+    font-weight: 600;
+  }
+  .badge-mcq { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+  .badge-trace { background: rgba(245,158,11,0.1); color: var(--yellow); border: 1px solid rgba(245,158,11,0.2); }
+  .badge-write { background: rgba(108,99,255,0.12); color: #a78bfa; border: 1px solid rgba(108,99,255,0.25); }
+
+  /* Code block */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 0 0 14px 44px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.8;
+    color: #c9d1e8;
+    overflow-x: auto;
+    white-space: pre;
+    direction: ltr;
+    text-align: left;
+  }
+  .kw { color: #c792ea; }
+  .type { color: #82aaff; }
+  .str { color: #c3e88d; }
+  .num { color: #f78c6c; }
+  .cm { color: #546e7a; font-style: italic; }
+  .fn { color: #82aaff; }
+
+  /* Options */
+  .options { margin-right: 44px; display: flex; flex-direction: column; gap: 8px; }
+  .option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 13.5px;
+  }
+  .option:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .option input[type="radio"] { accent-color: var(--accent); width: 15px; height: 15px; flex-shrink: 0; }
+
+  /* Text inputs */
+  .text-input {
+    width: 100%;
+    margin-right: 0;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    resize: vertical;
+    min-height: 80px;
+    direction: ltr;
+    text-align: left;
+    transition: border-color 0.2s;
+    margin-right: 44px;
+    width: calc(100% - 44px);
+  }
+  .text-input:focus { outline: none; border-color: var(--accent); }
+
+  /* Submit */
+  .submit-area { text-align: center; margin-top: 28px; }
+  #submit-btn {
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    color: white;
+    border: none;
+    padding: 14px 40px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    box-shadow: 0 4px 20px rgba(108,99,255,0.3);
+  }
+  #submit-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  #submit-btn:active { transform: translateY(0); }
+
+  /* Results */
+  #result-section {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 24px;
+    margin-top: 24px;
+    text-align: center;
+  }
+  .score-circle {
+    width: 90px; height: 90px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 26px; font-weight: 700;
+  }
+  .score-high { background: rgba(34,197,94,0.12); border: 2px solid var(--green); color: var(--green); }
+  .score-mid { background: rgba(245,158,11,0.12); border: 2px solid var(--yellow); color: var(--yellow); }
+  .score-low { background: rgba(239,68,68,0.12); border: 2px solid var(--red); color: var(--red); }
+  .result-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .result-msg { font-size: 13.5px; color: var(--muted); line-height: 1.7; }
+
+  .answers-list { margin-top: 24px; text-align: right; }
+  .answer-item {
+    border-radius: 9px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .answer-correct { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); }
+  .answer-wrong { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); }
+  .answer-open { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); }
+  .icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+  .teacher-note {
+    background: var(--card);
+    border: 1px solid rgba(108,99,255,0.25);
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-top: 20px;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.7;
+    text-align: right;
+  }
+  .teacher-note strong { color: #a78bfa; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="tag">CCIT · برمجة متقدمة Java</div>
+    <h1>اختبار تشخيصي سريع</h1>
+    <p>هذا ليس اختبار تقييم — هدفه فقط مساعدتك ومساعدة الدكتورة على معرفة نقطة البداية الصحيحة.</p>
+    <div class="meta">
+      <div class="meta-item"><span class="dot dot-purple"></span> 6 أسئلة</div>
+      <div class="meta-item"><span class="dot dot-yellow"></span> 10 دقائق</div>
+      <div class="meta-item"><span class="dot dot-green"></span> لا يُحتسب في الدرجات</div>
+    </div>
+  </div>
+
+  <!-- Timer -->
+  <div class="timer-bar">
+    <span class="timer-label">الوقت المتبقي</span>
+    <div style="text-align:left">
+      <div id="timer-display">10:00</div>
+      <div class="timer-progress"><div id="progress-fill"></div></div>
+    </div>
+  </div>
+
+  <!-- Q1 -->
+  <div class="question-card">
+    <div class="q-header">
+      <div class="q-num">1</div>
+      <div class="q-text">ما الفرق بين <code style="background:var(--code-bg);padding:2px 6px;border-radius:4px;font-family:JetBrains Mono,monospace;font-size:13px;">class</code> و <code style="background:var(--code-bg);padding:2px 6px;border-radius:4px;font-family:JetBrains Mono,monospace;font-size:13px;">object</code> في Java؟</div>
+    </div>
+    <span class="q-type-badge badge-mcq">اختيار من متعدد</span>
+    <div class="options">
+      <label class="option"><input type="radio" name="q1" value="a"> الـ class هي نسخة من الـ object</label>
+      <label class="option"><input type="radio" name="q1" value="b"> الـ class هي القالب، والـ object هو النسخة الفعلية منه</label>
+      <label class="option"><input type="radio" name="q1" value="c"> لا فرق بينهما، مجرد مصطلحات مختلفة لنفس الشيء</label>
+      <label class="option"><input type="radio" name="q1" value="d"> الـ object يُستخدم فقط في الـ main method</label>
+    </div>
+  </div>
+
+  <!-- Q2 -->
+  <div class="question-card">
+    <div class="q-header">
+      <div class="q-num">2</div>
+      <div class="q-text">ما ناتج تنفيذ الكود التالي؟</div>
+    </div>
+    <span class="q-type-badge badge-trace">تتبع الكود</span>
+    <div class="code-block"><span class="kw">class</span> <span class="type">Animal</span> {
+    <span class="type">Animal</span>() {
+        System.out.println(<span class="str">"Animal"</span>);
+    }
+}
+<span class="kw">class</span> <span class="type">Dog</span> <span class="kw">extends</span> <span class="type">Animal</span> {
+    <span class="type">Dog</span>() {
+        System.out.println(<span class="str">"Dog"</span>);
+    }
+}
+<span class="kw">public class</span> <span class="type">Main</span> {
+    <span class="kw">public static void</span> <span class="fn">main</span>(String[] args) {
+        <span class="type">Dog</span> d = <span class="kw">new</span> <span class="type">Dog</span>();
+    }
+}</div>
+    <div class="options">
+      <label class="option"><input type="radio" name="q2" value="a"> Dog فقط</label>
+      <label class="option"><input type="radio" name="q2" value="b"> Animal فقط</label>
+      <label class="option"><input type="radio" name="q2" value="c"> Animal ثم Dog</label>
+      <label class="option"><input type="radio" name="q2" value="d"> Dog ثم Animal</label>
+    </div>
+  </div>
+
+  <!-- Q3 -->
+  <div class="question-card">
+    <div class="q-header">
+      <div class="q-num">3</div>
+      <div class="q-text">ما الخطأ في الكود التالي؟</div>
+    </div>
+    <span class="q-type-badge badge-trace">تتبع الكود</span>
+    <div class="code-block"><span class="kw">class</span> <span class="type">Student</span> {
+    <span class="kw">private</span> String name;
+    <span class="kw">private int</span> age;
+}
+<span class="kw">public class</span> <span class="type">Main</span> {
+    <span class="kw">public static void</span> <span class="fn">main</span>(String[] args) {
+        <span class="type">Student</span> s = <span class="kw">new</span> <span class="type">Student</span>();
+        s.name = <span class="str">"Sara"</span>;   <span class="cm">// هذا السطر</span>
+    }
+}</div>
+    <div class="options">
+      <label class="option"><input type="radio" name="q3" value="a"> لا يوجد خطأ، الكود صحيح</label>
+      <label class="option"><input type="radio" name="q3" value="b"> خطأ لأن name مُعرَّف كـ private ولا يمكن الوصول إليه مباشرة من خارج الـ class</label>
+      <label class="option"><input type="radio" name="q3" value="c"> خطأ لأن String ليس نوعًا صحيحًا في Java</label>
+      <label class="option"><input type="radio" name="q3" value="d"> خطأ لأن الـ constructor غير موجود</label>
+    </div>
+  </div>
+
+  <!-- Q4 -->
+  <div class="question-card">
+    <div class="q-header">
+      <div class="q-num">4</div>
+      <div class="q-text">ما معنى كلمة <code style="background:var(--code-bg);padding:2px 6px;border-radius:4px;font-family:JetBrains Mono,monospace;font-size:13px;">super()</code> داخل constructor الابن؟</div>
+    </div>
+    <span class="q-type-badge badge-mcq">اختيار من متعدد</span>
+    <div class="options">
+      <label class="option"><input type="radio" name="q4" value="a"> تستدعي method اسمها super في نفس الـ class</label>
+      <label class="option"><input type="radio" name="q4" value="b"> تستدعي constructor الـ class الأب (superclass)</label>
+      <label class="option"><input type="radio" name="q4" value="c"> تُنشئ نسخة جديدة من الـ class الأب</label>
+      <label class="option"><input type="radio" name="q4" value="d"> تُوقف تنفيذ الكود وترجع للـ main</label>
+    </div>
+  </div>
+
+  <!-- Q5 -->
+  <div class="question-card">
+    <div class="q-header">
+      <div class="q-num">5</div>
+      <div class="q-text">اكتبي بشكل مبسط: ما هو Constructor وما وظيفته؟ (جملة أو جملتان بلغتك)</div>
+    </div>
+    <span class="q-type-badge badge-write">إجابة مفتوحة</span>
+    <textarea class="text-input" id="q5-answer" placeholder="اكتبي إجابتك هنا..."></textarea>
+  </div>
+
+  <!-- Q6 -->
+  <div class="question-card">
+    <div class="q-header">
+      <div class="q-num">6</div>
+      <div class="q-text">من تجربتك السابقة مع مادة Java، ما أكثر شيء كان يُربكك أو يوقفك؟</div>
+    </div>
+    <span class="q-type-badge badge-write">إجابة مفتوحة</span>
+    <p style="margin: 0 44px 12px; font-size: 12.5px; color: var(--muted); line-height: 1.6;">اكتبي بحرية — لا توجد إجابة خاطئة. هدف السؤال فقط أن تعرف الدكتورة كيف تساعدك بشكل أفضل.</p>
+    <textarea class="text-input" id="q6-answer" placeholder="مثلاً: ما أفهم الـ inheritance، أو أفهم لكن ما أعرف أكتب الكود، أو كل شيء كان صعب..."></textarea>
+  </div>
+
+  <div class="submit-area">
+    <button id="submit-btn" onclick="submitQuiz()">إنهاء وإرسال الإجابات</button>
+  </div>
+
+  <!-- Results -->
+  <div id="result-section">
+    <div id="score-circle" class="score-circle"></div>
+    <div class="result-title" id="result-title"></div>
+    <div class="result-msg" id="result-msg"></div>
+    <div class="answers-list" id="answers-list"></div>
+    <div class="teacher-note" id="teacher-note"></div>
+  </div>
+
+</div>
+
+<script>
+  const TOTAL_SECONDS = 600;
+  let remaining = TOTAL_SECONDS;
+  let submitted = false;
+
+  const timerEl = document.getElementById('timer-display');
+  const fillEl = document.getElementById('progress-fill');
+
+  const interval = setInterval(() => {
+    if (submitted) { clearInterval(interval); return; }
+    remaining--;
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    timerEl.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    fillEl.style.width = (remaining / TOTAL_SECONDS * 100) + '%';
+
+    if (remaining <= 60) {
+      timerEl.className = 'danger';
+      fillEl.style.background = 'var(--red)';
+    } else if (remaining <= 180) {
+      timerEl.className = 'warning';
+      fillEl.style.background = 'var(--yellow)';
+    }
+
+    if (remaining <= 0) {
+      clearInterval(interval);
+      submitQuiz();
+    }
+  }, 1000);
+
+  const correct = { q1: 'b', q2: 'c', q3: 'b', q4: 'b' };
+  const questions = {
+    q1: 'الفرق بين class و object',
+    q2: 'ناتج تنفيذ الكود (constructor chaining)',
+    q3: 'الخطأ في الكود (private access)',
+    q4: 'معنى super()'
+  };
+  const explanations = {
+    q1: 'الـ class هو القالب (Blueprint)، والـ object هو النسخة الحقيقية التي يتم إنشاؤها منه في الذاكرة.',
+    q2: 'عند إنشاء Dog، تُستدعى constructor الـ Animal أولاً تلقائياً، ثم constructor الـ Dog.',
+    q3: 'المتغيرات المُعرَّفة بـ private لا يمكن الوصول إليها مباشرة من خارج الـ class — نستخدم setters.',
+    q4: 'super() تستدعي constructor الـ class الأب، وهي أول سطر يجب أن يُكتب في constructor الابن.'
+  };
+
+  function submitQuiz() {
+    if (submitted) return;
+    submitted = true;
+    clearInterval(interval);
+
+    let score = 0;
+    const resultHtml = [];
+
+    for (const [qKey, correctVal] of Object.entries(correct)) {
+      const selected = document.querySelector(`input[name="${qKey}"]:checked`);
+      const userVal = selected ? selected.value : null;
+      const isCorrect = userVal === correctVal;
+      if (isCorrect) score++;
+
+      const icon = isCorrect ? '✓' : (userVal ? '✗' : '–');
+      const cls = isCorrect ? 'answer-correct' : (userVal ? 'answer-wrong' : 'answer-wrong');
+      const iconColor = isCorrect ? '#22c55e' : '#ef4444';
+
+      resultHtml.push(`
+        <div class="answer-item ${cls}">
+          <span class="icon" style="color:${iconColor}">${icon}</span>
+          <div>
+            <strong>${questions[qKey]}</strong><br>
+            <span style="color:var(--muted);font-size:12px;">${explanations[qKey]}</span>
+          </div>
+        </div>
+      `);
+    }
+
+    const q5 = document.getElementById('q5-answer').value.trim();
+    resultHtml.push(`
+      <div class="answer-item answer-open">
+        <span class="icon" style="color:var(--yellow)">✎</span>
+        <div>
+          <strong>تعريف Constructor (إجابة مفتوحة)</strong><br>
+          <span style="color:var(--muted);font-size:12px;">${q5 || '(لم تُكتب إجابة)'}</span>
+        </div>
+      </div>
+    `);
+
+    const q6 = document.getElementById('q6-answer').value.trim();
+    resultHtml.push(`
+      <div class="answer-item answer-open">
+        <span class="icon" style="color:var(--yellow)">✎</span>
+        <div>
+          <strong>أكثر شيء كان يُربكك (إجابة مفتوحة)</strong><br>
+          <span style="color:var(--muted);font-size:12px;">${q6 || '(لم تُكتب إجابة)'}</span>
+        </div>
+      </div>
+    `);
+
+    const circle = document.getElementById('score-circle');
+    circle.textContent = `${score}/4`;
+    if (score >= 3) { circle.className = 'score-circle score-high'; }
+    else if (score >= 2) { circle.className = 'score-circle score-mid'; }
+    else { circle.className = 'score-circle score-low'; }
+
+    const titleMap = ['تحتاجين مراجعة أساسية', 'قاعدة جيدة — نكمل منها', 'قاعدة جيدة — نكمل منها', 'ممتاز — جاهزة للمادة المتقدمة', 'ممتاز — جاهزة للمادة المتقدمة'];
+    const msgMap = [
+      'لا بأس — هذا بالضبط سبب وجود هذا الاختبار. ستراجع الدكتورة معك الأساس في أول محاضرة.',
+      'فيكِ أساس، لكن في فجوات محددة. الدكتورة تعرف الآن أين تركز.',
+      'فيكِ أساس، لكن في فجوات محددة. الدكتورة تعرف الآن أين تركز.',
+      'جاهزة تمامًا للمادة. ركزي الآن على abstract classes وinterfaces.',
+      'جاهزة تمامًا للمادة. ركزي الآن على abstract classes وinterfaces.'
+    ];
+
+    document.getElementById('result-title').textContent = titleMap[score];
+    document.getElementById('result-msg').textContent = msgMap[score];
+    document.getElementById('answers-list').innerHTML = resultHtml.join('');
+    document.getElementById('teacher-note').innerHTML = `
+      <strong>ملاحظة للمحاضرة:</strong> هذه النتائج ستساعد الدكتورة على تحديد نقطة البداية الصحيحة لهذا الترم. لا توجد إجابة "محرجة" — كل إجابة معلومة مفيدة.
+    `;
+
+    document.getElementById('result-section').style.display = 'block';
+    document.getElementById('result-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('submit-btn').disabled = true;
+    document.getElementById('submit-btn').style.opacity = '0.5';
+  }
+</script>
+</body>
+</html>
