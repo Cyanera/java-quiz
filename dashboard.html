@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة نتائج الاختبار التشخيصي</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #0a0c12;
+    --surface: #12151f;
+    --card: #181c28;
+    --border: #252a3a;
+    --accent: #6c63ff;
+    --accent2: #22c55e;
+    --accent3: #f59e0b;
+    --red: #ef4444;
+    --text: #e8eaf0;
+    --muted: #7a8099;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 32px 24px 60px;
+  }
+
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .header-left h1 { font-size: 24px; font-weight: 700; }
+  .header-left p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  .refresh-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .refresh-btn:hover { opacity: 0.85; }
+  .refresh-btn.loading { opacity: 0.6; pointer-events: none; }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 700px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; left: 0; height: 3px;
+  }
+  .stat-card.purple::before { background: var(--accent); }
+  .stat-card.green::before { background: var(--accent2); }
+  .stat-card.yellow::before { background: var(--accent3); }
+  .stat-card.red::before { background: var(--red); }
+
+  .stat-label { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .stat-value { font-size: 32px; font-weight: 700; }
+  .stat-card.purple .stat-value { color: #a78bfa; }
+  .stat-card.green .stat-value { color: var(--accent2); }
+  .stat-card.yellow .stat-value { color: var(--accent3); }
+  .stat-card.red .stat-value { color: var(--red); }
+  .stat-sub { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+
+  /* Charts row */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 750px) { .charts-row { grid-template-columns: 1fr; } }
+
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+  }
+  .chart-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 18px;
+    color: var(--text);
+  }
+  .chart-wrap { position: relative; height: 220px; }
+
+  /* Weakness section */
+  .full-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 20px;
+  }
+  .full-card .chart-title { margin-bottom: 16px; }
+
+  .weakness-bars { display: flex; flex-direction: column; gap: 12px; }
+  .weakness-bar-row { display: flex; align-items: center; gap: 12px; }
+  .weakness-label { font-size: 12.5px; color: var(--muted); min-width: 140px; text-align: right; }
+  .weakness-track {
+    flex: 1;
+    height: 10px;
+    background: var(--border);
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .weakness-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.8s ease;
+  }
+  .weakness-pct { font-size: 12px; font-weight: 600; min-width: 36px; text-align: left; }
+
+  /* Comments */
+  .comments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-left: 4px;
+  }
+  .comments-grid::-webkit-scrollbar { width: 4px; }
+  .comments-grid::-webkit-scrollbar-track { background: var(--border); border-radius: 2px; }
+  .comments-grid::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
+
+  .comment-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+    border-right: 3px solid var(--accent3);
+  }
+
+  /* Loading & empty */
+  .loading-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    gap: 16px;
+    color: var(--muted);
+  }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .empty-state .big { font-size: 40px; margin-bottom: 12px; }
+
+  .timestamp {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-left">
+      <h1>📊 لوحة نتائج الاختبار التشخيصي</h1>
+      <p>برمجة متقدمة Java — الترم الصيفي</p>
+    </div>
+    <button class="refresh-btn" onclick="loadData()">
+      <span>🔄</span> تحديث النتائج
+    </button>
+  </div>
+
+  <div id="main-content">
+    <div class="loading-screen">
+      <div class="spinner"></div>
+      <span>جاري تحميل البيانات...</span>
+    </div>
+  </div>
+
+  <div class="timestamp" id="timestamp"></div>
+</div>
+
+<script>
+const SHEET_ID = '1XkFJaBRIoT3XphUB6BMjQ2JQGUfx0eGuAG-gBARidG4';
+const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Sheet1`;
+
+const Q_LABELS = ['س1: class vs object', 'س2: constructor chaining', 'س3: private access', 'س4: super()'];
+const CORRECT = { q1: 'b', q2: 'c', q3: 'b', q4: 'b' };
+
+let charts = {};
+
+async function loadData() {
+  const btn = document.querySelector('.refresh-btn');
+  btn.classList.add('loading');
+  btn.innerHTML = '<span>⏳</span> جاري التحديث...';
+
+  try {
+    const res = await fetch(SHEET_URL + '&t=' + Date.now());
+    const text = await res.text();
+    const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/)[1]);
+    const rows = json.table.rows;
+
+    if (!rows || rows.length <= 1) {
+      showEmpty();
+      return;
+    }
+
+    // Parse rows — skip header row
+    const data = [];
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i].c;
+      if (!r || !r[0]) continue;
+      data.push({
+        time: r[0]?.v || '',
+        q1: r[1]?.v || '—',
+        q2: r[2]?.v || '—',
+        q3: r[3]?.v || '—',
+        q4: r[4]?.v || '—',
+        q5: r[5]?.v || '—',
+        q6: r[6]?.v || '—',
+        score: r[7]?.v || '0/4'
+      });
+    }
+
+    if (data.length === 0) { showEmpty(); return; }
+    renderDashboard(data);
+
+  } catch (err) {
+    document.getElementById('main-content').innerHTML = `
+      <div class="empty-state">
+        <div class="big">⚠️</div>
+        <div>تعذر تحميل البيانات — تأكدي أن الـ Sheet مشارك بـ "Anyone with the link"</div>
+        <div style="margin-top:8px;font-size:12px;color:#555">${err.message}</div>
+      </div>`;
+  } finally {
+    btn.classList.remove('loading');
+    btn.innerHTML = '<span>🔄</span> تحديث النتائج';
+    document.getElementById('timestamp').textContent = 'آخر تحديث: ' + new Date().toLocaleTimeString('ar-SA');
+  }
+}
+
+function showEmpty() {
+  document.getElementById('main-content').innerHTML = `
+    <div class="empty-state">
+      <div class="big">📭</div>
+      <div>لا توجد إجابات بعد — شاركي الرابط مع الطالبات</div>
+    </div>`;
+}
+
+function renderDashboard(data) {
+  const total = data.length;
+
+  // Scores
+  const scores = data.map(d => parseInt(d.score));
+  const avg = (scores.reduce((a,b) => a+b, 0) / total).toFixed(1);
+  const passed = scores.filter(s => s >= 3).length;
+  const failed = scores.filter(s => s <= 1).length;
+
+  // Per-question correctness — map answer letters to correct
+  const answerMap = {
+    'الـ class هي القالب، والـ object هو النسخة الفعلية منه': 'b',
+    'Animal ثم Dog': 'c',
+    'خطأ لأن name مُعرَّف كـ private ولا يمكن الوصول إليه مباشرة من خارج الـ class': 'b',
+    'تستدعي constructor الـ class الأب': 'b'
+  };
+
+  const qKeys = ['q1','q2','q3','q4'];
+  const correctCounts = qKeys.map(k => {
+    return data.filter(d => {
+      const val = d[k];
+      return Object.keys(answerMap).some(correct => val && val.includes(correct.substring(0, 20)));
+    }).length;
+  });
+
+  // Score distribution
+  const dist = [0,0,0,0,0];
+  scores.forEach(s => { if(s >= 0 && s <= 4) dist[s]++; });
+
+  // Weaknesses — questions where < 60% correct
+  const weaknessData = qKeys.map((k, i) => ({
+    label: Q_LABELS[i],
+    correct: correctCounts[i],
+    pct: Math.round(correctCounts[i] / total * 100)
+  })).sort((a,b) => a.pct - b.pct);
+
+  // Comments
+  const comments = data.map(d => d.q6).filter(c => c && c !== '—' && c.trim().length > 3);
+
+  // Build HTML
+  document.getElementById('main-content').innerHTML = `
+    <div class="stats-row">
+      <div class="stat-card purple">
+        <div class="stat-label">عدد الطالبات</div>
+        <div class="stat-value">${total}</div>
+        <div class="stat-sub">أكملن الاختبار</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">متوسط الدرجة</div>
+        <div class="stat-value">${avg}</div>
+        <div class="stat-sub">من 4 درجات</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-label">قاعدة جيدة</div>
+        <div class="stat-value">${passed}</div>
+        <div class="stat-sub">حصلن على 3 أو 4</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">تحتاج دعم</div>
+        <div class="stat-value">${failed}</div>
+        <div class="stat-sub">حصلن على 1 أو أقل</div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">توزيع الدرجات</div>
+        <div class="chart-wrap"><canvas id="distChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">نسبة الإجابات الصحيحة لكل سؤال</div>
+        <div class="chart-wrap"><canvas id="qChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="full-card">
+      <div class="chart-title">🔴 نقاط الضعف — مرتبة من الأضعف للأقوى</div>
+      <div class="weakness-bars">
+        ${weaknessData.map(w => {
+          const color = w.pct < 40 ? '#ef4444' : w.pct < 65 ? '#f59e0b' : '#22c55e';
+          return `
+          <div class="weakness-bar-row">
+            <div class="weakness-label">${w.label}</div>
+            <div class="weakness-track">
+              <div class="weakness-fill" style="width:${w.pct}%;background:${color}"></div>
+            </div>
+            <div class="weakness-pct" style="color:${color}">${w.pct}%</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="full-card">
+      <div class="chart-title">💬 ما قالته الطالبات عن صعوباتهن (${comments.length} إجابة)</div>
+      ${comments.length === 0
+        ? '<div style="color:var(--muted);font-size:13px">لم تُكتب إجابات بعد</div>'
+        : `<div class="comments-grid">${comments.map(c => `<div class="comment-item">${c}</div>`).join('')}</div>`
+      }
+    </div>
+  `;
+
+  // Charts
+  if (charts.dist) charts.dist.destroy();
+  if (charts.q) charts.q.destroy();
+
+  const distCtx = document.getElementById('distChart').getContext('2d');
+  charts.dist = new Chart(distCtx, {
+    type: 'bar',
+    data: {
+      labels: ['0', '1', '2', '3', '4'],
+      datasets: [{
+        label: 'عدد الطالبات',
+        data: dist,
+        backgroundColor: ['#ef4444','#f97316','#f59e0b','#84cc16','#22c55e'],
+        borderRadius: 6,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#7a8099' }, grid: { color: '#252a3a' } },
+        y: { ticks: { color: '#7a8099', stepSize: 1 }, grid: { color: '#252a3a' } }
+      }
+    }
+  });
+
+  const qCtx = document.getElementById('qChart').getContext('2d');
+  charts.q = new Chart(qCtx, {
+    type: 'bar',
+    data: {
+      labels: ['س1', 'س2', 'س3', 'س4'],
+      datasets: [{
+        label: '% صحيح',
+        data: qKeys.map((k,i) => Math.round(correctCounts[i]/total*100)),
+        backgroundColor: qKeys.map((k,i) => {
+          const p = correctCounts[i]/total*100;
+          return p < 40 ? '#ef4444' : p < 65 ? '#f59e0b' : '#22c55e';
+        }),
+        borderRadius: 6,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#7a8099' }, grid: { color: '#252a3a' } },
+        y: {
+          min: 0, max: 100,
+          ticks: { color: '#7a8099', callback: v => v + '%' },
+          grid: { color: '#252a3a' }
+        }
+      }
+    }
+  });
+}
+
+loadData();
+</script>
+</body>
+</html>
