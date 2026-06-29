@@ -536,6 +536,24 @@
       </div>
     `);
 
+    // إرسال البيانات لـ Google Sheets
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwWtW2fNW8jyf2qHU34r0_k32w4R9cWu_JD_VcOoHuCTEha_I5Hv3FYTeJrmo1tX3Of/exec';
+    const payload = {
+      q1: document.querySelector('input[name="q1"]:checked')?.value || '—',
+      q2: document.querySelector('input[name="q2"]:checked')?.value || '—',
+      q3: document.querySelector('input[name="q3"]:checked')?.value || '—',
+      q4: document.querySelector('input[name="q4"]:checked')?.value || '—',
+      q5: document.getElementById('q5-answer').value.trim() || '—',
+      q6: document.getElementById('q6-answer').value.trim() || '—',
+      score: score
+    };
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(() => {}); // صامت — لا يؤثر على تجربة الطالبة
+
     const circle = document.getElementById('score-circle');
     circle.textContent = `${score}/4`;
     if (score >= 3) { circle.className = 'score-circle score-high'; }
