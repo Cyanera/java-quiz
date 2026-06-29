@@ -59,7 +59,7 @@
   <div class="header">
     <div><h1>📊 لوحة نتائج الاختبار التشخيصي</h1><p>برمجة متقدمة Java — الترم الصيفي</p></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <button class="btn btn-outline" id="analyzeBtn" onclick="analyzeWithAI()" style="display:none">🤖 تحليل بالذكاء الاصطناعي</button>
+      <button class="btn btn-outline" id="analyzeBtn" onclick="copyForAnalysis()" style="display:none">📋 نسخ البيانات للتحليل</button>
       <button class="btn" onclick="loadData()">🔄 تحديث</button>
     </div>
   </div>
@@ -137,15 +137,7 @@ function render(data){
   charts.q=new Chart(document.getElementById('qChart').getContext('2d'),{type:'bar',data:{labels:['س1','س2','س3','س4'],datasets:[{data:correctPcts,backgroundColor:correctPcts.map(p=>p<40?'#ef4444':p<65?'#f59e0b':'#22c55e'),borderRadius:6,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#7a8099'},grid:{color:'#252a3a'}},y:{min:0,max:100,ticks:{color:'#7a8099',callback:v=>v+'%'},grid:{color:'#252a3a'}}}}});
 }
 
-async function analyzeWithAI(){
-  const btn=document.getElementById('analyzeBtn');
-  btn.disabled=true;btn.textContent='⏳ جاري التحليل...';
-  const aiSection=document.getElementById('aiSection');
-  const aiContent=document.getElementById('aiContent');
-  aiSection.style.display='block';
-  aiContent.innerHTML='<div class="ai-loading"><div class="spinner"></div><span>Claude يحلل إجابات الطالبات...</span></div>';
-  aiSection.scrollIntoView({behavior:'smooth'});
-
+function copyForAnalysis(){
   const total=globalData.length;
   const scores=globalData.map(d=>d.score);
   const avg=(scores.reduce((a,b)=>a+b,0)/total).toFixed(1);
@@ -154,13 +146,15 @@ async function analyzeWithAI(){
   const constructorAnswers=globalData.map(d=>d.q5).filter(c=>c&&c!=='—'&&c.trim().length>2);
   const difficultyAnswers=globalData.map(d=>d.q6).filter(c=>c&&c!=='—'&&c.trim().length>2);
 
-  const prompt=`أنت مساعد أكاديمي. حلل نتائج هذا الاختبار التشخيصي لطالبات مادة برمجة متقدمة Java.
+  const text=`=== نتائج الاختبار التشخيصي — برمجة متقدمة Java ===
 
 البيانات الكمية:
 - عدد الطالبات: ${total}
 - متوسط الدرجة: ${avg} من 4
-- نسب الإجابات الصحيحة:
-${qStats.map(q=>`  • ${q.label}: ${q.pct}%`).join('\n')}
+- توزيع الدرجات: ${[0,1,2,3,4].map(s=>`${s}درجات: ${scores.filter(x=>x===s).length} طالبة`).join(' | ')}
+
+نسب الإجابات الصحيحة:
+${qStats.map(q=>`• ${q.label}: ${q.pct}%`).join('\n')}
 
 إجاباتهن على "ما هو Constructor":
 ${constructorAnswers.length?constructorAnswers.map((a,i)=>`${i+1}. ${a}`).join('\n'):'لا توجد إجابات'}
@@ -168,22 +162,30 @@ ${constructorAnswers.length?constructorAnswers.map((a,i)=>`${i+1}. ${a}`).join('
 إجاباتهن على "ما أكثر شيء يربكك":
 ${difficultyAnswers.length?difficultyAnswers.map((a,i)=>`${i+1}. ${a}`).join('\n'):'لا توجد إجابات'}
 
-المطلوب — اكتب بالعربية:
-1. ملخص الوضع العام (جملتان فقط)
-2. أبرز 3 نقاط ضعف مشتركة
-3. تحليل فهمهن للـ Constructor من إجاباتهن
-4. تصنيف الصعوبات من إجاباتهن المفتوحة
-5. 3 توصيات محددة للمحاضرة الأولى`;
+===
+حللي هذه النتائج وأعطيني:
+1. ملخص الوضع العام
+2. أبرز نقاط الضعف المشتركة
+3. تحليل فهمهن للـ Constructor
+4. تصنيف الصعوبات من إجاباتهن
+5. توصيات محددة للمحاضرة الأولى`;
 
-  try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
-    const data=await res.json();
-    const text=data.content?.[0]?.text||'تعذر الحصول على التحليل';
-    aiContent.innerHTML=`<div class="ai-box">${text}</div>`;
-  }catch(err){
-    aiContent.innerHTML=`<div style="color:var(--red);font-size:13px">تعذر التحليل: ${err.message}</div>`;
-  }
-  btn.disabled=false;btn.textContent='🤖 تحليل بالذكاء الاصطناعي';
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn=document.getElementById('analyzeBtn');
+    btn.textContent='✅ تم النسخ — الصقيه في Claude';
+    btn.style.borderColor='var(--green)';
+    btn.style.color='var(--green)';
+    setTimeout(()=>{btn.textContent='📋 نسخ البيانات للتحليل';btn.style.borderColor='';btn.style.color='';},3000);
+  }).catch(()=>{
+    // fallback
+    const ta=document.createElement('textarea');
+    ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');
+    document.body.removeChild(ta);
+    const btn=document.getElementById('analyzeBtn');
+    btn.textContent='✅ تم النسخ — الصقيه في Claude';
+    setTimeout(()=>{btn.textContent='📋 نسخ البيانات للتحليل';},3000);
+  });
 }
 
 loadData();
